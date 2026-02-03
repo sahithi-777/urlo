@@ -19,14 +19,8 @@ useEffect(() => {
 }, [id, fn]);
 useEffect(() => {
   if (!loading && data?.original_url) {
-    const track = fnStats({id: data.id});
-
-    const redirect = () => window.location.replace(data.original_url);
-
-    Promise.race([
-      track,
-      new Promise((resolve) => setTimeout(resolve, 800)),
-    ]).finally(redirect);
+    fnStats({id: data.id});
+    window.location.replace(data.original_url);
   }
 }, [loading, data, fnStats]);
 
