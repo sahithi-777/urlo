@@ -53,6 +53,14 @@ const LinkPage = () => {
     if (!error && loading === false) fnStats();
   }, [loading, error]);
 
+  useEffect(() => {
+    if (!id) return;
+    const intervalId = setInterval(() => {
+      fnStats();
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [id, fnStats]);
+
   if (error) {
     navigate("/dashboard");
   }

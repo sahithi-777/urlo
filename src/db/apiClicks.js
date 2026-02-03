@@ -38,7 +38,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 const regionNames = new Intl.DisplayNames(["en"], {type: "region"});
 const locationCacheKey = "ipinfo_cache_v1";
 const locationCacheTtlMs = 24 * 60 * 60 * 1000;
-const clickBucketMs = 10 * 1000;
+const clickBucketMs = 2 * 1000;
 
 const getCountryName = (code) => {
   if (!code) return "Unknown";
@@ -182,7 +182,7 @@ const shouldSkipClick = (id) => {
     const raw = sessionStorage.getItem(key);
     if (raw) {
       const last = Number(raw);
-      if (!Number.isNaN(last) && now - last < 5000) {
+      if (!Number.isNaN(last) && now - last < 1000) {
         return true;
       }
     }

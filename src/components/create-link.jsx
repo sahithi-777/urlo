@@ -29,6 +29,7 @@ export function CreateLink() {
   const longLink = searchParams.get("createNew");
 
   const [errors, setErrors] = useState({});
+  const [qrValue, setQrValue] = useState(longLink || "");
   const [formValues, setFormValues] = useState({
     title: "",
     longUrl: longLink || "",
@@ -49,6 +50,9 @@ export function CreateLink() {
       ...formValues,
       [e.target.id]: e.target.value,
     });
+    if (e.target.id === "longUrl") {
+      setQrValue(e.target.value);
+    }
   };
 
   const {
@@ -69,6 +73,13 @@ export function CreateLink() {
     try {
       await schema.validate(formValues, { abortEarly: false });
 
+      const shortUrl = Math.random().toString(36).substr(2, 6);
+      const shortLink = `${appBaseUrl}/${
+        formValues.customUrl || shortUrl
+      }`;
+      setQrValue(shortLink);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       let qrBlob = null;
       if (qrRef.current?.canvasRef?.current) {
         const canvas = qrRef.current.canvasRef.current;
@@ -83,6 +94,7 @@ export function CreateLink() {
           longUrl: formValues.longUrl,
           customUrl: formValues.customUrl,
           user_id: user.id,
+          shortUrl,
         },
         qrBlob
       );
@@ -114,7 +126,7 @@ export function CreateLink() {
         </DialogHeader>
 
         {formValues.longUrl && (
-          <QRCode ref={qrRef} size={250} value={formValues.longUrl} />
+          <QRCode ref={qrRef} size={250} value={qrValue || formValues.longUrl} />
         )}
 
         <Input

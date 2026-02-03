@@ -52,8 +52,11 @@ export async function getLongUrl(id) {
 
 
 // The function receives parameters correctly from the fixed useFetch hook
-export async function createUrl({title, longUrl, customUrl, user_id}, qrcode) {
-  const short_url = Math.random().toString(36).substr(2, 6);
+export async function createUrl(
+  {title, longUrl, customUrl, user_id, shortUrl},
+  qrcode
+) {
+  const short_url = shortUrl || Math.random().toString(36).substr(2, 6);
   const fileName = `qr-${short_url}`;
 
   const {error: storageError} = await supabase.storage
