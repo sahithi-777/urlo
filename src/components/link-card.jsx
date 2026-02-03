@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import {Copy, Download, LinkIcon, Trash} from "lucide-react";
+import {Copy, LinkIcon, QrCode, Trash} from "lucide-react";
 import {Link} from "react-router-dom";
 import {Button} from "./ui/button";
 import useFetch from "@/hooks/use-fetch";
@@ -8,6 +8,8 @@ import {BeatLoader} from "react-spinners";
 import appBaseUrl from "@/lib/base-url";
 
 const LinkCard = ({url = [], fetchUrls}) => {
+  const shortLink = `${appBaseUrl}/${url?.custom_url || url?.short_url}`;
+
   const downloadImage = () => {
     const imageUrl = url?.qr;
     const fileName = url?.title;
@@ -37,7 +39,7 @@ const LinkCard = ({url = [], fetchUrls}) => {
           {url?.title}
         </span>
         <span className="text-2xl text-blue-400 font-bold hover:underline cursor-pointer">
-          {appBaseUrl}/{url?.custom_url ? url?.custom_url : url.short_url}
+          {shortLink}
         </span>
         <span className="flex items-center gap-1 hover:underline cursor-pointer">
           <LinkIcon className="p-1" />
@@ -50,16 +52,12 @@ const LinkCard = ({url = [], fetchUrls}) => {
       <div className="flex gap-2">
         <Button
           variant="ghost"
-          onClick={() =>
-            navigator.clipboard.writeText(
-              `${appBaseUrl}/${url?.short_url}`
-            )
-          }
+          onClick={() => navigator.clipboard.writeText(shortLink)}
         >
           <Copy />
         </Button>
         <Button variant="ghost" onClick={downloadImage}>
-          <Download />
+          <QrCode />
         </Button>
         <Button
           variant="ghost"

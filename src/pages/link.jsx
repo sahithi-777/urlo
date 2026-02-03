@@ -6,7 +6,7 @@ import {UrlState} from "@/context";
 import {getClicksForUrl} from "@/db/apiClicks";
 import {deleteUrl, getUrl} from "@/db/apiUrls";
 import useFetch from "@/hooks/use-fetch";
-import {Copy, Download, LinkIcon, Trash} from "lucide-react";
+import {Copy, LinkIcon, QrCode, Trash} from "lucide-react";
 import {useEffect} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {BeatLoader} from "react-spinners";
@@ -69,6 +69,7 @@ const LinkPage = () => {
   if (url) {
     link = url?.custom_url ? url?.custom_url : url.short_url;
   }
+  const shortLink = link ? `${appBaseUrl}/${link}` : "";
 
   return (
     <>
@@ -78,11 +79,11 @@ const LinkPage = () => {
             {url?.title}
           </span>
           <a
-            href={`${appBaseUrl}/${link}`}
+            href={shortLink}
             target="_blank"
             className="text-3xl sm:text-4xl text-blue-400 font-bold hover:underline cursor-pointer"
           >
-            {appBaseUrl}/{link}
+            {shortLink}
           </a>
           <a
             href={url?.original_url}
@@ -98,16 +99,12 @@ const LinkPage = () => {
           <div className="flex gap-2">
             <Button
               variant="ghost"
-              onClick={() =>
-                navigator.clipboard.writeText(
-                  `${appBaseUrl}/${link}`
-                )
-              }
+              onClick={() => navigator.clipboard.writeText(shortLink)}
             >
               <Copy />
             </Button>
             <Button variant="ghost" onClick={downloadImage}>
-              <Download />
+              <QrCode />
             </Button>
             <Button
               variant="ghost"
