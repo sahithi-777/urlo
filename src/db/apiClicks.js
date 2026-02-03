@@ -33,6 +33,7 @@ const parser = new UAParser();
 
 const ipinfoToken = import.meta.env.VITE_IPINFO_TOKEN;
 const ipapiKey = import.meta.env.VITE_IPAPI_KEY;
+const ipdataKey = import.meta.env.VITE_IPDATA_KEY;
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 const regionNames = new Intl.DisplayNames(["en"], {type: "region"});
@@ -85,6 +86,25 @@ const fetchLocation = async () => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 800);
   try {
+    if (ipdataKey) {
+      const response = await fetch(
+        `https://api.ipdata.co?api-key=${ipdataKey}`,
+        {signal: controller.signal, keepalive: true}
+      ).catch(() => null);
+      if (response) {
+        const raw = await response.json();
+        const data = normalizeLocation({
+          ip: raw?.ip,
+          city: raw?.city,
+          region: raw?.region,
+          country: raw?.country_code,
+          country_name: raw?.country_name,
+        });
+        setCachedLocation(data);
+        return data;
+      }
+    }
+
     if (ipapiKey) {
       const response = await fetch(
         `https://api.ipapi.com/api/check?access_key=${ipapiKey}`,
@@ -223,7 +243,7 @@ export const storeClicks = async ({id}) => {
 
     insertClick({
       url_id: id,
-      city: locationFailed ? "Unknown" : locationData?.city || null,
+      city: null,
       region: locationFailed ? "Unknown" : locationData?.region || null,
       country: locationFailed
         ? "Unknown"
