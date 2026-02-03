@@ -9,26 +9,30 @@ import {
 } from "recharts";
 
 export default function Location({stats = []}) {
-  const countryCount = stats.reduce((acc, item) => {
-    const key = item.country || "Unknown";
+  const cityCount = stats.reduce((acc, item) => {
+    const city = item.city || "Unknown";
+    const region = item.region && item.region !== "Unknown" ? item.region : "";
+    const country = item.country && item.country !== "Unknown" ? item.country : "";
+    const cityRegion = region ? `${city}, ${region}` : city;
+    const key = country ? `${cityRegion}, ${country}` : cityRegion;
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
 
-  const countries = Object.entries(countryCount)
-    .map(([country, count]) => ({country, count}))
-    .filter((row) => row.country !== "Unknown")
+  const cities = Object.entries(cityCount)
+    .map(([city, count]) => ({city, count}))
+    .filter((row) => row.city && row.city !== "Unknown")
     .sort((a, b) => b.count - a.count)
-    .slice(0, 8);
+    .slice(0, 10);
 
   return (
-    <div style={{width: "100%", height: 300}}>
+    <div style={{width: "100%", height: 320}}>
       <ResponsiveContainer>
-        <BarChart width={700} height={300} data={countries}>
-          <XAxis dataKey="country" />
+        <BarChart width={700} height={320} data={cities}>
+          <XAxis dataKey="city" interval={0} angle={-25} textAnchor="end" height={70} />
           <YAxis />
           <Tooltip />
-          <Bar dataKey="count" fill="#82ca9d" />
+          <Bar dataKey="count" fill="#60a5fa" />
         </BarChart>
       </ResponsiveContainer>
     </div>

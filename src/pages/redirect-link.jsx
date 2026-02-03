@@ -1,25 +1,31 @@
 import {storeClicks} from "@/db/apiClicks";
 import {getLongUrl} from "@/db/apiUrls";
 import useFetch from "@/hooks/use-fetch";
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {BarLoader} from "react-spinners";
 
 const RedirectLink = () => {
   const {id} = useParams();
   const navigate = useNavigate();
+  const didTrackRef = useRef(false);
+  const didFetchRef = useRef(false);
 
   const {loading, data, fn, error} = useFetch(getLongUrl, id);
   const {loading: loadingStats, fn: fnStats} = useFetch(storeClicks);
 
 useEffect(() => {
-  if (id) {
+  if (id && !didFetchRef.current) {
+    didFetchRef.current = true;
     fn();
   }
 }, [id, fn]);
 useEffect(() => {
   if (!loading && data?.original_url) {
-    fnStats({id: data.id});
+    if (!didTrackRef.current) {
+      didTrackRef.current = true;
+      fnStats({id: data.id});
+    }
     window.location.replace(data.original_url);
   }
 }, [loading, data, fnStats]);

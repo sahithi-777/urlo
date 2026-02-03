@@ -32,11 +32,13 @@ export async function getClicksForUrl(url_id) {
 const parser = new UAParser();
 
 const ipinfoToken = import.meta.env.VITE_IPINFO_TOKEN;
+const ipapiKey = import.meta.env.VITE_IPAPI_KEY;
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 const regionNames = new Intl.DisplayNames(["en"], {type: "region"});
 const locationCacheKey = "ipinfo_cache_v1";
 const locationCacheTtlMs = 24 * 60 * 60 * 1000;
+const clickBucketMs = 10 * 1000;
 
 const getCountryName = (code) => {
   if (!code) return "Unknown";
@@ -71,19 +73,62 @@ const setCachedLocation = (data) => {
   }
 };
 
+const normalizeLocation = (data = {}) => ({
+  ip: data.ip || data?.ip_address || null,
+  city: data.city || null,
+  region: data.region || data.region_name || null,
+  country: data.country || data.country_code || data.country_code2 || null,
+  countryName: data.country_name || null,
+});
+
 const fetchLocation = async () => {
-  if (!ipinfoToken) return null;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 800);
   try {
-    const response = await fetch(
-      `https://ipinfo.io/json?token=${ipinfoToken}`,
-      {signal: controller.signal, keepalive: true}
-    ).catch(() => null);
-    if (!response) return null;
-    const data = await response.json();
-    setCachedLocation(data);
-    return data;
+    if (ipapiKey) {
+      const response = await fetch(
+        `https://api.ipapi.com/api/check?access_key=${ipapiKey}`,
+        {signal: controller.signal, keepalive: true}
+      ).catch(() => null);
+      if (response) {
+        const raw = await response.json();
+        const data = normalizeLocation(raw);
+        setCachedLocation(data);
+        return data;
+      }
+    } else {
+      const response = await fetch("https://ipapi.co/json/", {
+        signal: controller.signal,
+        keepalive: true,
+      }).catch(() => null);
+      if (response) {
+        const raw = await response.json();
+        const data = normalizeLocation({
+          ip: raw?.ip,
+          city: raw?.city,
+          region: raw?.region,
+          country: raw?.country_code,
+          country_name: raw?.country_name,
+        });
+        setCachedLocation(data);
+        return data;
+      }
+    }
+
+    if (ipinfoToken) {
+      const response = await fetch(
+        `https://ipinfo.io/json?token=${ipinfoToken}`,
+        {signal: controller.signal, keepalive: true}
+      ).catch(() => null);
+      if (response) {
+        const raw = await response.json();
+        const data = normalizeLocation(raw);
+        setCachedLocation(data);
+        return data;
+      }
+    }
+
+    return null;
   } catch {
     return null;
   } finally {
@@ -106,8 +151,55 @@ const insertClick = (payload) => {
   }).catch(() => null);
 };
 
+const fallbackHash = (value) => {
+  let hash = 5381;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const getUaHash = async (value) => {
+  try {
+    if (!value) return null;
+    if (crypto?.subtle) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(value);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    return fallbackHash(value);
+  } catch {
+    return fallbackHash(value || "unknown");
+  }
+};
+
+const shouldSkipClick = (id) => {
+  try {
+    const key = `click_${id}`;
+    const now = Date.now();
+    const raw = sessionStorage.getItem(key);
+    if (raw) {
+      const last = Number(raw);
+      if (!Number.isNaN(last) && now - last < 5000) {
+        return true;
+      }
+    }
+    sessionStorage.setItem(key, String(now));
+  } catch {
+    return false;
+  }
+  return false;
+};
+
 export const storeClicks = async ({id}) => {
   try {
+    if (shouldSkipClick(id)) return;
+    if (document.visibilityState && document.visibilityState !== "visible") {
+      return;
+    }
+
     const ua = navigator.userAgent || "";
     const isBot =
       /bot|crawl|spider|preview|facebook|whatsapp|telegram|slack|discord/i.test(
@@ -116,16 +208,29 @@ export const storeClicks = async ({id}) => {
     if (isBot) return;
 
     const res = parser.getResult();
-    const device = res.type || "desktop";
+    const device = res.device?.type || "desktop";
 
     const cached = getCachedLocation();
-    const locationData = cached || (await fetchLocation()) || {};
+    const [locationData, uaHash] = await Promise.all([
+      cached ? Promise.resolve(cached) : fetchLocation(),
+      getUaHash(ua),
+    ]);
+    const locationFailed = !locationData;
+    const countryCode = locationData?.country || null;
+    const countryName = locationData?.countryName || null;
+    const hashSeed = `${ua}|${locationData?.ip || ""}|${countryCode || ""}`;
+    const finalUaHash = uaHash || (await getUaHash(hashSeed)) || "unknown";
 
     insertClick({
       url_id: id,
-      city: locationData.city || "Unknown",
-      country: getCountryName(locationData.country),
+      city: locationFailed ? "Unknown" : locationData?.city || null,
+      region: locationFailed ? "Unknown" : locationData?.region || null,
+      country: locationFailed
+        ? "Unknown"
+        : countryName || getCountryName(countryCode) || null,
       device,
+      ua_hash: finalUaHash,
+      bucket: Math.floor(Date.now() / clickBucketMs),
     });
   } catch (error) {
     console.error("Error recording click:", error);
