@@ -6,7 +6,7 @@ import {UrlState} from "@/context";
 import {getClicksForUrl} from "@/db/apiClicks";
 import {deleteUrl, getUrl} from "@/db/apiUrls";
 import useFetch from "@/hooks/use-fetch";
-import {Copy, LinkIcon, QrCode, Trash} from "lucide-react";
+import {ArrowLeft, Copy, LinkIcon, QrCode, Trash} from "lucide-react";
 import {useEffect} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {BeatLoader} from "react-spinners";
@@ -75,6 +75,14 @@ const LinkPage = () => {
     <>
       <div className="flex flex-col gap-8 sm:flex-row justify-between">
         <div className="flex flex-col items-start gap-8 rounded-lg sm:w-2/5">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center text-gray-300 hover:text-white"
+            aria-label="Back to Links"
+            title="Back to Links"
+          >
+            <ArrowLeft size={18} />
+          </button>
           <span className="text-6xl font-extrabold hover:underline cursor-pointer">
             {url?.title}
           </span>
