@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {Filter} from "lucide-react";
+import {useLocation} from "react-router-dom";
 
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
@@ -17,8 +18,9 @@ import {UrlState} from "@/context";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
   const {user} = UrlState();
-  const {loading, error, data: urls, fn: fnUrls} = useFetch(getUrls, user.id);
+  const {loading, error, data: urls, fn: fnUrls} = useFetch(getUrls);
   const {
     loading: loadingClicks,
     data: clicks,
@@ -29,8 +31,26 @@ const Dashboard = () => {
   );
 
   useEffect(() => {
-    fnUrls();
-  }, [fnClicks, fnUrls]);
+    if (user?.id) {
+      fnUrls(user.id);
+    }
+  }, [fnUrls, user?.id, location?.key, location?.pathname, location?.search]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const handleFocus = () => fnUrls(user.id);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fnUrls(user.id);
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [fnUrls, user?.id]);
 
   const filteredUrls = urls?.filter((url) =>
     url.title.toLowerCase().includes(searchQuery.toLowerCase())

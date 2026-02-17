@@ -41,8 +41,7 @@ const router = createBrowserRouter([
       },
     ],
   },
-  // FIXED: Move the redirect route outside AppLayout to avoid rendering header/footer
-  // This makes redirects faster and cleaner
+  
   {
     path: "/:id",
     element: <RedirectLink />,

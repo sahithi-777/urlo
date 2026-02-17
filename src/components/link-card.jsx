@@ -2,6 +2,13 @@
 import {Copy, LinkIcon, QrCode, Trash} from "lucide-react";
 import {Link} from "react-router-dom";
 import {Button} from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import useFetch from "@/hooks/use-fetch";
 import {deleteUrl} from "@/db/apiUrls";
 import {BeatLoader} from "react-spinners";
@@ -56,9 +63,25 @@ const LinkCard = ({url = [], fetchUrls}) => {
         >
           <Copy />
         </Button>
-        <Button variant="ghost" onClick={downloadImage}>
-          <QrCode />
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost">
+              <QrCode />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>QR Code</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-4">
+              <img
+                src={url?.qr}
+                className="w-full object-contain"
+                alt="qr code"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
         <Button
           variant="ghost"
           onClick={() => fnDelete().then(() => fetchUrls())}

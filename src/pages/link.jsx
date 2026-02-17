@@ -11,6 +11,13 @@ import {useEffect} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {BeatLoader} from "react-spinners";
 import appBaseUrl from "@/lib/base-url";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const LinkPage = () => {
   const downloadImage = () => {
@@ -76,7 +83,9 @@ const LinkPage = () => {
       <div className="flex flex-col gap-8 sm:flex-row justify-between">
         <div className="flex flex-col items-start gap-8 rounded-lg sm:w-2/5">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => {
+              window.location.href = "/dashboard";
+            }}
             className="inline-flex items-center text-gray-300 hover:text-white"
             aria-label="Back to Links"
             title="Back to Links"
@@ -111,9 +120,25 @@ const LinkPage = () => {
             >
               <Copy />
             </Button>
-            <Button variant="ghost" onClick={downloadImage}>
-              <QrCode />
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost">
+                  <QrCode />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>QR Code</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center gap-4">
+                  <img
+                    src={url?.qr}
+                    className="w-full object-contain"
+                    alt="qr code"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button
               variant="ghost"
               onClick={() =>
